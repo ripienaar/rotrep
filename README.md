@@ -18,7 +18,7 @@ First you have to capture checksums on all your files, do this the first time us
 rotrep update --path /data
 ```
 
-You'll now have `checksums.json` files in every directory, you now have to go into a cycle of verify/update regularly:
+You'll now have `.checksums.json` files in every directory, you now have to go into a cycle of verify/update regularly:
 
 ```
 rotrep verify --path /data

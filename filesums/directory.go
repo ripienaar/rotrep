@@ -29,7 +29,7 @@ func NewDirectory(path string) *Directory {
 }
 
 func (self *Directory) save() error {
-	out := filepath.Join(self.path, "checksums.json")
+	out := filepath.Join(self.path, ".checksums.json")
 	log.Debugf("Saving %s", out)
 
 	self.Updated = time.Now().Unix()
@@ -48,7 +48,7 @@ func (self *Directory) save() error {
 }
 
 func (self *Directory) shouldCheckFile(file string) bool {
-	if strings.HasPrefix(file, ".") || file == "checksums.json" {
+	if strings.HasPrefix(file, ".checksums.json") {
 		return false
 	}
 

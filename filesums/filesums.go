@@ -102,7 +102,7 @@ func (self *FileSums) Verify() (fcount int, err error) {
 // loads a checksum file or returns a empty checksum if none exist
 func (self *FileSums) loadDirectory(directory string) (*Directory, error) {
 	dir := NewDirectory(directory)
-	sumfile := path.Join(directory, "checksums.json")
+	sumfile := path.Join(directory, ".checksums.json")
 
 	if !isDir(directory) {
 		return dir, fmt.Errorf("Could not load '%s', it's not a directory", directory)
