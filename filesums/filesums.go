@@ -16,92 +16,72 @@ type FileSums struct {
 	Root        string
 	Workers     int
 	Quiet       bool
+	Progress    bool
+	Stats       *Stats
 }
 
 // Update searches for new files or files with wrong checksums and store them
-func (self *FileSums) Update() (changed int, added int, err error) {
+func (self *FileSums) Update() (err error) {
 	log.Info("Updating checksums")
 
-	work := make(chan *Directory, len(self.Directories))
-	updated := make(chan string, len(self.Directories))
-	new := make(chan string, len(self.Directories))
-
 	wg := &sync.WaitGroup{}
+
+	work := make(chan *Directory, len(self.Directories))
 
 	for _, dir := range self.Directories {
 		work <- dir
 	}
 	close(work)
 
-	for w := 1; w <= self.Workers; w++ {
-		wg.Add(1)
-		go self.updateWorker(work, updated, new, w, wg)
+	if self.Progress {
+		go self.Stats.ShowProgress()
+		defer self.Stats.StopProgress()
+
 	}
 
-	go func() {
-		for f := range new {
-			if !self.Quiet {
-				fmt.Printf("new: %s\n", f)
-			}
-			added++
-		}
-	}()
-
-	go func() {
-		for f := range updated {
-			if !self.Quiet {
-				fmt.Printf("updated: %s\n", f)
-			}
-			changed++
-		}
-	}()
+	for w := 1; w <= self.Workers; w++ {
+		wg.Add(1)
+		go self.updateWorker(work, w, wg)
+	}
 
 	wg.Wait()
-
-	close(updated)
-	close(new)
 
 	return
 }
 
 // Verify searches for previously seen files that do not match and report them
-func (self *FileSums) Verify() (fcount int, err error) {
+func (self *FileSums) Verify() (err error) {
 	log.Info("Verifying checksums")
 
+	wg := &sync.WaitGroup{}
 	work := make(chan *Directory, len(self.Directories))
 	failed := make(chan string, len(self.Directories))
-	wg := &sync.WaitGroup{}
+
+	defer close(failed)
 
 	for _, dir := range self.Directories {
 		work <- dir
 	}
 	close(work)
+
+	if self.Progress {
+		go self.Stats.ShowProgress()
+		defer self.Stats.StopProgress()
+	}
 
 	for w := 1; w <= self.Workers; w++ {
 		wg.Add(1)
 		go self.verifyWorker(work, failed, w, wg)
 	}
 
-	go func() {
-		for f := range failed {
-			if !self.Quiet {
-				fmt.Printf("failed: %s\n", f)
-			}
-
-			fcount++
-		}
-	}()
-
 	wg.Wait()
-
-	close(failed)
 
 	return
 }
 
 // loads a checksum file or returns a empty checksum if none exist
 func (self *FileSums) loadDirectory(directory string) (*Directory, error) {
-	dir := NewDirectory(directory)
+	dir := NewDirectory(directory, !self.Progress)
 	sumfile := path.Join(directory, ".checksums.json")
 
 	if !isDir(directory) {
@@ -164,15 +144,15 @@ func (self *FileSums) verifyWorker(jobs chan *Directory, failed chan string, wor
 	defer wg.Done()
 
 	for j := range jobs {
-		j.Verify(failed)
+		j.Verify(failed, self.Stats)
 	}
 }
 
-func (self *FileSums) updateWorker(jobs chan *Directory, updated chan string, new chan string, worker int, wg *sync.WaitGroup) {
+func (self *FileSums) updateWorker(jobs chan *Directory, worker int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for j := range jobs {
-		err := j.Update(updated, new)
+		err := j.Update(self.Stats)
 		if err != nil {
 			log.Errorf("Could not update %s: %s", j.path, err.Error())
 		}

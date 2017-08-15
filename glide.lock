@@ -1,5 +1,5 @@
-hash: 62f408921e4122e66279ef44476b4306c5bb23f648745c9793419dad7c315837
-updated: 2017-08-15T12:16:19.410897693+02:00
+hash: df9502ca59b4be78c8143b5b52bfffd019aa64660a2b675915067ea5b476712a
+updated: 2017-08-15T14:10:19.113675586+02:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -7,6 +7,12 @@ imports:
   - parse
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+- name: github.com/gosuri/uilive
+  version: ac356e6e42cd31fcef8e6aec13ae9ed6fe87713e
+- name: github.com/gosuri/uiprogress
+  version: d0567a9d84a1c40dd7568115ea66f4887bf57b33
+  subpackages:
+  - util/strutil
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/sirupsen/logrus

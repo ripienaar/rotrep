@@ -17,14 +17,16 @@ type Directory struct {
 	Updated int64             `json:"updated"`
 	Files   map[string]string `json:"files"`
 	path    string
+	report  bool
 }
 
-func NewDirectory(path string) *Directory {
+func NewDirectory(path string, report bool) *Directory {
 	return &Directory{
 		Created: time.Now().Unix(),
 		Updated: time.Now().Unix(),
 		Files:   make(map[string]string),
 		path:    path,
+		report:  report,
 	}
 }
 
@@ -55,7 +57,9 @@ func (self *Directory) shouldCheckFile(file string) bool {
 	return true
 }
 
-func (self *Directory) Verify(failed chan string) bool {
+func (self *Directory) Verify(failed chan string, stats *Stats) bool {
+	defer stats.IncrDirectories()
+
 	success := true
 
 	files, err := ioutil.ReadDir(self.path)
@@ -91,14 +95,25 @@ func (self *Directory) Verify(failed chan string) bool {
 		if csum != rsum {
 			failed <- fqpath
 			success = false
+			stats.IncrFailed(&fqpath)
+
 			log.Warnf("Mismatch %s %s != %s", fqpath, csum, rsum)
+			if self.report {
+				fmt.Printf("failed: %s\n", fqpath)
+			}
+		} else {
+			stats.IncrVerified()
 		}
 	}
+
+	log.Debugf("Done verifying %s", self.path)
 
 	return success
 }
 
-func (self *Directory) Update(updated chan string, new chan string) error {
+func (self *Directory) Update(stats *Stats) error {
+	defer stats.IncrDirectories()
+
 	found := false
 
 	files, err := ioutil.ReadDir(self.path)
@@ -128,14 +143,25 @@ func (self *Directory) Update(updated chan string, new chan string) error {
 
 		if !seen {
 			self.Files[file.Name()] = csum
-			new <- fqpath
 			found = true
+			stats.IncrNew(&fqpath)
+
 			log.Debugf("Captured %s", fqpath)
+			if self.report {
+				fmt.Printf("new: %s\n", fqpath)
+			}
+
 		} else if csum != rsum {
 			self.Files[file.Name()] = csum
-			updated <- fqpath
 			found = true
+			stats.IncrUpdated(&fqpath)
+
 			log.Debugf("Updated %s %s -> %s", fqpath, rsum, csum)
+			if self.report {
+				fmt.Printf("updated: %s\n", fqpath)
+			}
+		} else {
+			stats.IncrVerified()
 		}
 	}
 
@@ -145,6 +171,8 @@ func (self *Directory) Update(updated chan string, new chan string) error {
 			return fmt.Errorf("Could not save checksums: %s", err.Error())
 		}
 	}
+
+	log.Debugf("Done updating %s", self.path)
 
 	return nil
 }
