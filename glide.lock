@@ -1,0 +1,12 @@
+hash: 5a243f6d952847f26174078ee4206b79b481a78b6ac1cc0f8cd7713ae4d76ab9
+updated: 2017-08-14T15:28:08.636858203+02:00
+imports:
+- name: github.com/sirupsen/logrus
+  version: a3f95b5c423586578a4e099b11a46c2479628cac
+- name: golang.org/x/sys
+  version: f7928cfef4d09d1b080aa2b6fd3ca9ba1567c733
+  subpackages:
+  - unix
+- name: gopkg.in/alecthomas/kingpin.v2
+  version: 871a069a9e0d336e58dee8413d1178d1eec70174
+testImports: []
