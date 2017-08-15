@@ -41,7 +41,11 @@ func Run() {
 
 	configureLogging()
 
-	log.WithFields(log.Fields{"debug": debug, "verbose": verbose, "workers": workers, "quiet": quiet, "yes": yes}).Infof("Managing checksums for path %s", path)
+	if verbose || debug || quiet {
+		progress = false
+	}
+
+	log.WithFields(log.Fields{"debug": debug, "verbose": verbose, "workers": workers, "quiet": quiet, "yes": yes, "progress": progress}).Infof("Managing checksums for path %s", path)
 
 	switch cmd {
 	case "verify":
