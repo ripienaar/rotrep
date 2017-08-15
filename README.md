@@ -26,6 +26,8 @@ rotrep verify --path /data
 
 Should this report any issue, verify if this is expected changes to your files, if not restore from other backups.
 
+You should also check the status of files on every one of your replicas regularly to ensure they are in a good state, this ensures that you'll always be able to recover files should the source fail or rot.
+
 Finally update your checksums - this will add new files and update checksums of any changed files:
 
 ```

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Songmu/prompter"
 	"github.com/ripienaar/rotrep/filesums"
 	log "github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -12,11 +13,13 @@ import (
 var (
 	debug   bool
 	verbose bool
+	yes     bool
+	quiet   bool
 	path    string
 	cmd     string
 	workers int
-	quiet   bool
-	sums    *filesums.FileSums
+
+	sums *filesums.FileSums
 )
 
 func Run() {
@@ -27,7 +30,9 @@ func Run() {
 	app.Flag("verbose", "Enable verbose logging").Short('v').Default("false").BoolVar(&verbose)
 	app.Flag("debug", "Enable debug logging").Short('d').Default("false").BoolVar(&debug)
 
-	app.Command("update", "Store new checksums and update existing ones that do not match")
+	u := app.Command("update", "Store new checksums and update existing ones that do not match")
+	u.Flag("yes", "Assume yes to any questions").Short('y').Default("false").BoolVar(&yes)
+
 	v := app.Command("verify", "Verify previously recorded checksums")
 	v.Flag("quiet", "Do not produce output, only exit with 0 or 1").Short('q').Default("false").BoolVar(&quiet)
 
@@ -35,7 +40,7 @@ func Run() {
 
 	configureLogging()
 
-	log.WithFields(log.Fields{"debug": debug, "verbose": verbose, "workers": workers, "quiet": quiet}).Infof("Managing checksums for path %s", path)
+	log.WithFields(log.Fields{"debug": debug, "verbose": verbose, "workers": workers, "quiet": quiet, "yes": yes}).Infof("Managing checksums for path %s", path)
 
 	var err error
 
@@ -84,6 +89,12 @@ func verify() {
 }
 
 func update() {
+	if !yes {
+		if !prompter.YN("Are you sure you wish to update checksums and add new files", false) {
+			os.Exit(1)
+		}
+	}
+
 	changed, added, err := sums.Update()
 
 	fmt.Println("Summary:")
