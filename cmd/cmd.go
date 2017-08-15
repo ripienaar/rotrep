@@ -156,4 +156,8 @@ func update() {
 		fmt.Printf("Updating failed: %s\n", err.Error())
 		os.Exit(1)
 	}
+
+	if sums.Stats.Updated() > 0 || sums.Stats.New() > 0 {
+		os.Exit(1)
+	}
 }
