@@ -20,31 +20,20 @@ type FileSums struct {
 	Stats       *Stats
 }
 
+// Add searches for new files and adds them without also verifying existing files
+func (self *FileSums) Add() (err error) {
+	log.Info("Adding new file checksums")
+
+	err = self.addOrUpdate(true)
+
+	return
+}
+
 // Update searches for new files or files with wrong checksums and store them
 func (self *FileSums) Update() (err error) {
 	log.Info("Updating checksums")
 
-	wg := &sync.WaitGroup{}
-
-	work := make(chan *Directory, len(self.Directories))
-
-	for _, dir := range self.Directories {
-		work <- dir
-	}
-	close(work)
-
-	if self.Progress {
-		go self.Stats.ShowProgress()
-		defer self.Stats.StopProgress()
-
-	}
-
-	for w := 1; w <= self.Workers; w++ {
-		wg.Add(1)
-		go self.updateWorker(work, w, wg)
-	}
-
-	wg.Wait()
+	err = self.addOrUpdate(false)
 
 	return
 }
@@ -72,6 +61,34 @@ func (self *FileSums) Verify() (err error) {
 	for w := 1; w <= self.Workers; w++ {
 		wg.Add(1)
 		go self.verifyWorker(work, failed, w, wg)
+	}
+
+	wg.Wait()
+
+	return
+}
+
+func (self *FileSums) addOrUpdate(skipExisting bool) (err error) {
+	wg := &sync.WaitGroup{}
+	work := make(chan *Directory, len(self.Directories))
+
+	for _, dir := range self.Directories {
+		work <- dir
+	}
+	close(work)
+
+	if self.Progress {
+		go self.Stats.ShowProgress()
+		defer self.Stats.StopProgress()
+	}
+
+	for w := 1; w <= self.Workers; w++ {
+		wg.Add(1)
+		if skipExisting {
+			go self.addWorker(work, w, wg)
+		} else {
+			go self.updateWorker(work, w, wg)
+		}
 	}
 
 	wg.Wait()
@@ -155,6 +172,17 @@ func (self *FileSums) updateWorker(jobs chan *Directory, worker int, wg *sync.Wa
 		err := j.Update(self.Stats)
 		if err != nil {
 			log.Errorf("Could not update %s: %s", j.path, err.Error())
+		}
+	}
+}
+
+func (self *FileSums) addWorker(jobs chan *Directory, worker int, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for j := range jobs {
+		err := j.Add(self.Stats)
+		if err != nil {
+			log.Errorf("Could not add %s: %s", j.path, err.Error())
 		}
 	}
 }
