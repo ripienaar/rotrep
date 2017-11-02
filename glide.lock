@@ -1,5 +1,5 @@
 hash: df9502ca59b4be78c8143b5b52bfffd019aa64660a2b675915067ea5b476712a
-updated: 2017-08-15T14:10:19.113675586+02:00
+updated: 2017-11-02T09:39:29.92296251+01:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -16,7 +16,7 @@ imports:
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/sirupsen/logrus
-  version: a3f95b5c423586578a4e099b11a46c2479628cac
+  version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/Songmu/prompter
   version: f49666b0047d12850875d771340e1d862d9e7a0c
 - name: golang.org/x/crypto

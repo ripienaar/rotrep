@@ -34,6 +34,9 @@ func Run() {
 	u := app.Command("update", "Store new checksums and update existing ones that do not match")
 	u.Flag("yes", "Assume yes to any questions").Short('y').Default("false").BoolVar(&yes)
 
+	a := app.Command("add", "Store new checksums without checking or updating existing files")
+	a.Flag("yes", "Assume yes to any questions").Short('y').Default("false").BoolVar(&yes)
+
 	v := app.Command("verify", "Verify previously recorded checksums")
 	v.Flag("quiet", "Do not produce output, only exit with 0 or 1").Short('q').Default("false").BoolVar(&quiet)
 
@@ -48,6 +51,8 @@ func Run() {
 	log.WithFields(log.Fields{"debug": debug, "verbose": verbose, "workers": workers, "quiet": quiet, "yes": yes, "progress": progress}).Infof("Managing checksums for path %s", path)
 
 	switch cmd {
+	case "add":
+		add()
 	case "verify":
 		verify()
 	case "update":
@@ -77,6 +82,27 @@ func configureLogging() {
 	}
 }
 
+func add() {
+	sums := createFileSums()
+	err := sums.Add()
+
+	if sums.Stats.New() > 0 {
+		fmt.Println("")
+	}
+
+	fmt.Println("Summary:")
+	fmt.Printf("    Root Directory: %s\n", sums.Root)
+	fmt.Printf("   Sub Directories: %d\n", sums.Stats.Directories())
+	fmt.Printf("       Files Added: %d\n", sums.Stats.New())
+
+	if err != nil {
+		fmt.Println("")
+		fmt.Printf("Add failed: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	os.Exit(0)
+}
 func verify() {
 	sums := createFileSums()
 

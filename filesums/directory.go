@@ -112,6 +112,14 @@ func (self *Directory) Verify(failed chan string, stats *Stats) bool {
 }
 
 func (self *Directory) Update(stats *Stats) error {
+	return self.addOrUpdate(false, stats)
+}
+
+func (self *Directory) Add(stats *Stats) error {
+	return self.addOrUpdate(true, stats)
+}
+
+func (self *Directory) addOrUpdate(skipExisting bool, stats *Stats) error {
 	defer stats.IncrDirectories()
 
 	found := false
@@ -132,14 +140,17 @@ func (self *Directory) Update(stats *Stats) error {
 
 		log.Debugf("updating file %s", fqpath)
 
+		rsum, seen := self.Files[file.Name()]
+		if seen && skipExisting {
+			continue
+		}
+
 		csum, err := computeMd5(fqpath)
 		if err != nil {
 			err := fmt.Errorf("Could not calculate checksum for %s: %s", file.Name(), err.Error())
 			fmt.Println(err.Error())
 			panic(err)
 		}
-
-		rsum, seen := self.Files[file.Name()]
 
 		if !seen {
 			self.Files[file.Name()] = csum
@@ -150,7 +161,6 @@ func (self *Directory) Update(stats *Stats) error {
 			if self.report {
 				fmt.Printf("new: %s\n", fqpath)
 			}
-
 		} else if csum != rsum {
 			self.Files[file.Name()] = csum
 			found = true
